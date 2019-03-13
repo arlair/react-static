@@ -210,28 +210,18 @@ export function isPrefetchableRoute(path) {
     return false
   }
 
-  // script links
-  // eslint-disable-next-line
-  if (path.indexOf('javascript:') === 0) {
-    return false
-  }
-
-  const self = document.location
+  const { location } = document
   let link
 
   try {
-    link = new URL(path)
+    link = new URL(path, location.href)
   } catch (e) {
-    // if a path is not parsable by URL its a local relative path
-    return true
+    // Return false on invalid URLs
+    return false
   }
 
-  // if the hostname/port/proto doesnt match its not a route link
-  if (
-    self.hostname !== link.hostname ||
-    self.port !== link.port ||
-    self.protocol !== link.protocol
-  ) {
+  // if the hostname/port/protocol doesn't match its not a route link
+  if (location.host !== link.host || location.protocol !== link.protocol) {
     return false
   }
 
@@ -241,4 +231,11 @@ export function isPrefetchableRoute(path) {
   }
 
   return true
+}
+
+export function getFullRouteData(routeInfo) {
+  return {
+    ...(routeInfo.sharedData ? routeInfo.sharedData : {}),
+    ...routeInfo.data,
+  }
 }

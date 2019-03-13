@@ -1,3 +1,24 @@
+# 6.3.6
+
+#### Fixes & Optimizations
+
+- Fix prefetching issues for 404 templates and other edge cases.
+- Fix registration of 404 template on client boot
+- Fix remounting of Route components when no history changes have occurred
+- Use outputPath when inlineCss option is used
+- Move build artifacts out of the `dist` directory and into a new `artifacts` directory
+
+# 6.3.5
+
+#### New Features
+
+- MDX plugin
+- Typscript Template
+- Non-js extensions
+- Use Terser instead of uglifyJS
+- Fix Shared-Data loading
+- Uprade to React 16.8
+
 # 6.2.0
 
 #### New Features

@@ -10,6 +10,7 @@ A `static.config.js` file is optional, but recommended at your project root to u
 - [basePath](#basepath)
 - [stagingBasePath](#stagingbasepath)
 - [devBasePath](#devbasepath)
+- [assetsPath](#assetsPath)
 - [extractCssChunks](#extractcsschunks)
 - [inlineCss](#inlinecss)
 - [Document](#document)
@@ -210,7 +211,11 @@ export default {
 }
 ```
 
+Since JSX is now being used in this static.config.js file, you need to import React at the top of the file; add this: `import React from 'react'`
+
 ### `webpack`
+
+> ⚠️Warning - this field in `static.config.js` may be outdated - [use `node.api.js` instead](https://github.com/nozzle/react-static/blob/master/docs/plugins/node-api.md#webpack-functionfunction).
 
 To configure webpack, extend the build system, or make modifications, see the [Plugin API section](#plugin-api)
 
@@ -254,6 +259,7 @@ export default {
     devDist: 'tmp/dev-server', // The development scratch directory.
     public: 'public', // The public directory (files copied to dist during build)
     assets: 'dist', // The output directory for bundled JS and CSS
+    buildArtifacts: 'artifacts', // The output directory for generated (internal) resources
   },
 }
 ```
@@ -402,4 +408,4 @@ React Static has tons of other customization possibilities available through the
 - Rendering pipeline customizations and transformations for React components, elements, the Document wrapper, etc.
 - Head tag injection
 
-Every React Static project can utilize the plugin API locally without needing to create a plugin by creating either `node.api.js` or `browser.api.js` files in the root of your project. See the [Plugin Documentation](https://github.com/nozzle/react-static/blob/master/docs/plugins/README.md) for more information!
+Every React Static project can utilize the plugin API locally without needing to create a plugin by creating either `node.api.js` or `browser.api.js` files in the root of your project. See the [Plugin Documentation](https://github.com/nozzle/react-static/tree/master/docs/plugins) for more information!

@@ -5,6 +5,8 @@ import {
   getRoutePath,
   pathJoin,
   isPrefetchableRoute,
+  getFullRouteData,
+  makePathAbsolute,
 } from './utils'
 import onVisible from './utils/Visibility'
 
@@ -179,9 +181,13 @@ export async function getRouteInfo(path, { priority } = {}) {
   } catch (err) {
     // If there was an error, mark the path as errored
     routeErrorByPath[path] = true
-    // Unless we already failed to find info for the 404 page,
+    // Unless we already fetched the 404 page,
     // try to load info for the 404 page
-    if (path !== '404') return getRouteInfo('404', { priority })
+    if (!routeInfoByPath['404'] && !routeErrorByPath['404']) {
+      getRouteInfo('404', { priority })
+      return
+    }
+
     return
   }
   if (!priority) {
@@ -208,14 +214,12 @@ export async function prefetchData(path, { priority } = {}) {
 
   // Defer to the cache first. In dev mode, this should already be available from
   // the call to getRouteInfo
-  if (routeInfo.fullData) {
-    return routeInfo.fullData
+  if (routeInfo.sharedData) {
+    return getFullRouteData(routeInfo)
   }
 
   // Request and build the props one by one
-  routeInfo.fullData = {
-    ...(routeInfo.data || {}),
-  }
+  routeInfo.sharedData = {}
 
   // Request the template and loop over the routeInfo.sharedHashesByProp, requesting each prop
   await Promise.all(
@@ -226,25 +230,21 @@ export async function prefetchData(path, { priority } = {}) {
       if (!sharedDataByHash[hash]) {
         // Reuse request for duplicate inflight requests
         try {
+          const staticDataPath = pathJoin(
+            process.env.REACT_STATIC_ASSETS_PATH,
+            `staticData/${hash}.json`
+          )
+          const absoluteStaticDataPath = makePathAbsolute(staticDataPath)
+
           // If priority, get it immediately
           if (priority) {
-            const { data: prop } = await axios.get(
-              pathJoin(
-                process.env.REACT_STATIC_ASSETS_PATH,
-                `staticData/${hash}.json`
-              )
-            )
+            const { data: prop } = await axios.get(absoluteStaticDataPath)
             sharedDataByHash[hash] = prop
           } else {
             // Non priority, share inflight requests and use pool
             if (!inflightPropHashes[hash]) {
               inflightPropHashes[hash] = requestPool.add(() =>
-                axios.get(
-                  pathJoin(
-                    process.env.REACT_STATIC_ASSETS_PATH,
-                    `staticData/${hash}.json`
-                  )
-                )
+                axios.get(absoluteStaticDataPath)
               )
             }
             const { data: prop } = await inflightPropHashes[hash]
@@ -264,12 +264,11 @@ export async function prefetchData(path, { priority } = {}) {
       }
 
       // Otherwise, just set it as the key
-      routeInfo.fullData[key] = sharedDataByHash[hash]
+      routeInfo.sharedData[key] = sharedDataByHash[hash]
     })
   )
 
-  // Return the props
-  return routeInfo.fullData
+  return getFullRouteData(routeInfo)
 }
 
 export async function prefetchTemplate(path, { priority } = {}) {
@@ -279,7 +278,9 @@ export async function prefetchTemplate(path, { priority } = {}) {
   const routeInfo = await getRouteInfo(path, { priority })
 
   if (routeInfo) {
-    registerTemplateForPath(path, routeInfo.template)
+    // Make sure to use the path as defined in the routeInfo object here.
+    // This will make sure 404 route info returned from getRouteInfo is handled correctly.
+    registerTemplateForPath(routeInfo.path, routeInfo.template)
   }
 
   // Preload the template if available
@@ -289,6 +290,12 @@ export async function prefetchTemplate(path, { priority } = {}) {
     templateErrorByPath[path] = true
     return
   }
+
+  // If we didn't no route info was return, there is nothing more to do here
+  if (!routeInfo) {
+    return Template
+  }
+
   if (!routeInfo.templateLoaded && Template.preload) {
     if (priority) {
       await Template.preload()

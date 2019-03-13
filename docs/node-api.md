@@ -34,7 +34,7 @@ Creates a new react-static project.
 Starts the development server.
 
 - Arguments
-  - `config: object || string` - The config object to use, or the path of the `static.config.js` file you wish to use.
+  - `config: string` - The path of the `static.config.js` file you wish to use.
 - Returns a `Promise` that will **never resolve**. The process must be exited by the user to stop the server.
 
 ### `build`
@@ -42,14 +42,18 @@ Starts the development server.
 Builds your site for production. Outputs to a `dist` directory in your project.
 
 - Arguments
-  - `config: object || string` - The config object to use, or the path of the `static.config.js` file you wish to use.
+  - `config: string` - The path of the `static.config.js` file you wish to use.
   - `staging` - When `true`, no siteRoot replacement or absolute URL optimizations are performed, allowing a production build of your site to function on localhost more easily. Use this argument to test a production build locally.
   - `debug` - When `true`, your build will **not** be `uglified` allowing you to debug production errors (as long as they are unrelated to minification or uglification)
 - Returns a `Promise`
 
 ### `reloadRoutes`
 
-Intended for use in your `static.config.js` during development. When called it will rebuild all of your your routes and routeData by calling `config.getRoutes()` again. Any new routes or data returned will be hot-reloaded into your running development application. Its main use cases are very applicable if your routes or routeData are changing constantly during development and you do not want to restart the dev server. You can use this method to reload when local files are changed, update at a set timing interval, or even subscribe to an event stream from an API or CMS.
+Intended for use in your `static.config.js` during development. When called it will rebuild all of your routes and routeData by calling `config.getRoutes()` again. Any new routes or data returned will be hot-reloaded into your running development application. Its main use cases are very applicable if your routes or routeData are changing constantly during development and you do not want to restart the dev server. You can use this method to reload when local files are changed, update at a set timing interval, or even subscribe to an event stream from an API or CMS.
+
+- Arguments
+  - `paths: Array` - The paths to reload (defaults to all).
+- Returns a `Promise`
 
 Example:
 
@@ -152,7 +156,8 @@ These shared data fragments can be placed in any route's `sharedData` object. At
 Consider a large and heavy menu structure that is present only on the blog portion of your site. In this case, the menu data should only be loaded on the pages that use it, and only once per session (cached), instead of on every page individually. First we would use the `createSharedData` function and pass the data we want to share between our routes. Then in each route, we can pass the result of our `createSharedData` call as a prop to the route's `sharedData` property. The shared data props will then be stored, served and cached only once per session and merged into the result of the routes `getData` result at runtime!
 
 ```javascript
-import { createSharedData } from 'react-static'
+// static.config.js
+import { createSharedData } from 'react-static/node'
 
 export default {
   getRoutes: async () => {
